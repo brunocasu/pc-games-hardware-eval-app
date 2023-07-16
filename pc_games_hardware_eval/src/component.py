@@ -31,6 +31,18 @@ def format_intel_cpu_string(req_cpu):
         return req_cpu
 
 
+def format_category_str(req_category):
+    pattern1 = re.compile(r',')
+    match1 = pattern1.search(req_category)
+    if match1:
+        parsed_string = req_category.split(",")[0].strip()
+        return parsed_string
+
+    else:
+        return req_category
+
+
+
 class Component:
     def __init__(self, component_type):
         self.client = MongoClient('mongodb://localhost:27017/')
@@ -105,13 +117,13 @@ class Component:
                 elif document_count == 0:
                     print("->NOT FOUND! Find CPU returned zero documents: Component not found/not in database")
                 else:
-                    print("->Find CPU returned: ")
+                    print("->Find CPU returned: ", document_count)
                     for document in query_ret:
                         print(document["cpuName"])
                         self.mongo_document = document
                         self.parse_cpu_fields_to_object(document)
             else:
-                print("->Find CPU returned: ")
+                print("->Find CPU returned: ", document_count)
                 for document in query_ret:
                     print(document["cpuName"])
                     self.mongo_document = document
@@ -130,8 +142,10 @@ class Component:
             if document_count == 0:
                 print("->Find GPU returned zero documents: Component not found/not in database")
             else:
-                print("->Find GPU returned: ")
+                print("->Find GPU returned: ", document_count)
                 for document in query_ret:
+                    self.mongo_document = document
+                    self.parse_gpu_fields_to_object(document)
                     print(document["gpuName"])
 
     def find_component_by_id(self, component_uuid_str):
@@ -145,9 +159,9 @@ class Component:
             for document in query_ret:
                 if "cpuName" in document:
                     print(document["cpuName"])
-                    self.parse_cpu_fields_to_object(self, document)
+                    self.parse_cpu_fields_to_object(document)
                 elif "gpuName" in document:
-                    self.parse_gpu_fields_to_object(self, document)
+                    self.parse_gpu_fields_to_object(document)
                     print(document["gpuName"])
         else:
             print("->Find UUID returned zero documents")
@@ -157,8 +171,8 @@ class Component:
     # This should be used when this component is a minimum requirement for a Game
     # The suggestion will also return the amount of performance increment based on the user component
     def suggest_upgrade(self, user_component_benchmark, user_component_category, user_budget):
+        user_component_category = format_category_str(user_component_category)
         if self.component_type == "cpu":
-            print("->Init Budget Pipeline")
             budget_pipeline = [
                 {
                     "$match": {
@@ -193,29 +207,90 @@ class Component:
             ]
             results = self.collection.aggregate(budget_pipeline)
             if results:
-                print("->Budget Component Suggestion Found:")
+                print("->CPU Suggestion Found!")
                 for document in results:
-                    print(document["cpuName"])
+                    print("$$", document["cpuName"])
                     increment = (100*(document["cpuMark"]/user_component_benchmark)) - 100
                     increment = round(increment,1)
-                    print("  -Performance increment:", str(increment), "%")
-                    print("  -Price:", str(document["price"]), "USD")
+                    print("     -Performance increment:", str(increment), "%")
+                    print("     -cpuMark:", str(document["cpuMark"]))
+                    print("     -Price:", str(document["price"]), "USD")
+                    print("     -Category:", str(document["category"]))
             else:
-                print("->Budget Suggestion Pipeline return zero documents")
+                print("->Budget CPU Suggestion Pipeline return zero documents")
             results = self.collection.aggregate(high_perf_pipeline)
             if results:
-                print("->High Performance Suggestion Found:")
+                print("->High Performance CPU Suggestion Found!!")
                 for document in results:
-                    print(document["cpuName"])
+                    print("$$$$", document["cpuName"])
                     increment = (100*(document["cpuMark"]/user_component_benchmark)) - 100
                     increment = round(increment,1)
-                    print("  -Performance increment:", str(increment), "%")
-                    print("  -Price:", str(document["price"]), "USD")
+                    print("     -Performance increment:", str(increment), "%")
+                    print("     -cpuMark:", str(document["cpuMark"]))
+                    print("     -Price:", str(document["price"]), "USD")
+                    print("     -Category:", str(document["category"]))
             else:
-                print("->Budget Suggestion Pipeline return zero documents")
+                print("->High Perf. Suggestion Pipeline return zero documents")
 
         elif self.component_type == "gpu":
-            print("->Find UUID returned zero documents")
+            budget_pipeline = [
+                {
+                    "$match": {
+                        "category": {'$regex': user_component_category, '$options': 'i'}, "gpuValue": {"$exists": "true"},
+                        "price": {"$lte": user_budget}, "G3Dmark": {"$gt": self.gpu.g3d_mark}
+                    }
+                },
+                {
+                    "$sort": {
+                        "cpuValue": -1
+                    }
+                },
+                {
+                    "$limit": 2
+                },
+            ]
+            high_perf_pipeline = [
+                {
+                    "$match": {
+                        "category": {'$regex': user_component_category, '$options': 'i'}, "gpuValue": {"$exists": "true"},
+                        "G3Dmark": {"$gt": self.gpu.g3d_mark}
+                    }
+                },
+                {
+                    "$sort": {
+                        "testDate": -1
+                    }
+                },
+                {
+                    "$limit": 1
+                },
+            ]
+            results = self.collection.aggregate(budget_pipeline)
+            if results:
+                print("->GPU Suggestion Found!")
+                for document in results:
+                    print("$$", document["gpuName"])
+                    increment = (100*(document["G3Dmark"]/user_component_benchmark)) - 100
+                    increment = round(increment,1)
+                    print("     -Performance increment:", str(increment), "%")
+                    print("     -G3Dmark:", str(document["G3Dmark"]))
+                    print("     -Price:", str(document["price"]), "USD")
+                    print("     -Category:", str(document["category"]))
+            else:
+                print("->Budget CPU Suggestion Pipeline return zero documents")
+            results = self.collection.aggregate(high_perf_pipeline)
+            if results:
+                print("->High Performance GPU Suggestion Found!!")
+                for document in results:
+                    print("$$$$", document["gpuName"])
+                    increment = (100*(document["G3Dmark"]/user_component_benchmark)) - 100
+                    increment = round(increment,1)
+                    print("     -Performance increment:", str(increment), "%")
+                    print("     -G3Dmark:", str(document["G3Dmark"]))
+                    print("     -Price:", str(document["price"]), "USD")
+                    print("     -Category:", str(document["category"]))
+            else:
+                print("->High Perf. Suggestion Pipeline return zero documents")
 
     def parse_cpu_fields_to_object(self, document):
         self.component_id = document["componentID"]
