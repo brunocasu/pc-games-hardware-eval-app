@@ -1,0 +1,32 @@
+#query component using name and category
+{
+'gpuName': {
+    '$regex': 'GeForce GTX 960'
+},
+'category': 'Desktop'
+}
+
+#query find compoenents of the same category that have G3Dmark higher
+{
+    'G3Dmark': {
+        '$gt': 6042
+    },
+    'category': 'Desktop'
+}
+
+#query components of the same category that have G3Dmark higher and lower price than budget
+
+{
+    'G3Dmark': {
+        '$gt': 6042
+    },
+    'category': 'Desktop',
+    'gpuValue': {
+        '$exists': True
+    },
+    'price': {
+        '$lt': 200
+    }
+}
+# sort by price and GPU value
+{price: -1, gpuValue: -1}
