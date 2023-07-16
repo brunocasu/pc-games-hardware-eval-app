@@ -1,9 +1,8 @@
 import re
 from pymongo import MongoClient
 import pprint
-
-client = MongoClient('mongodb://localhost:27017/')
-db = client['local']
+import uuid
+from bson import ObjectId
 
 
 def format_intel_cpu_string(req_cpu):
@@ -42,12 +41,221 @@ def format_category_str(req_category):
         return req_category
 
 
+def show_best_cpu_value(limit, category, min_score=0):
+    print("->SHOW Best CPUs (Value Metric), category:", category)
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    if limit > 100:
+        print("Limit set is to HIGH")
+    else:
+        pipeline = [
+            {
+                "$match": {
+                    "cpuValue": {"$exists": "true"},
+                    "category": {'$regex': category, '$options': 'i'},
+                    "cpuMark": {'$gte': min_score},
+                }
+            },
+            {
+                "$sort": {
+                    "cpuValue": -1
+                }
+            },
+            {  # group devices by category
+                "$project": {"cpuName": 1, "cpuValue": 1, "price": 1, "cpuMark": 1, "_id": 0}
+            },
+            {
+                "$limit": limit
+            },
+
+        ]
+    results = collection.aggregate(pipeline)
+    for document in results:
+        print(document["cpuName"], "- Value:", document["cpuValue"],
+              "CPU Mark:", document["cpuMark"], "Price:", document["price"], "USD")
+
+
+def show_best_gpu_value(limit, category, min_score=0):
+    print("->SHOW Best GPUs (Value Metric), category:", category)
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    if limit > 100:
+        print("Limit set is to HIGH")
+    else:
+        pipeline = [
+            {
+                "$match": {
+                    "gpuValue": {"$exists": "true"},
+                    "category": {'$regex': category, '$options': 'i'},
+                    "G3Dmark": {'$gte': min_score},
+                }
+            },
+            {
+                "$sort": {
+                    "gpuValue": -1
+                }
+            },
+            {  # group devices by category
+                "$project": {"gpuName": 1, "gpuValue": 1, "price": 1, "G3Dmark": 1, "_id": 0}
+            },
+            {
+                "$limit": limit
+            },
+
+        ]
+    results = collection.aggregate(pipeline)
+    for document in results:
+        print(document["gpuName"], "- Value:", document["gpuValue"],
+              "G3D Mark:", document["G3Dmark"], "Price:", document["price"], "USD")
+
+
+def get_cpu_stats_category(start_year):
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    print("->STATISTICS - CPUs statistics per [CATEGORY] from:", start_year)
+    # CPUs Distribution per category and core count
+    pipeline = [
+        {
+            "$match": {
+                "testDate": {"$gte": start_year}, "cpuMark": {"$exists": "true"}, "price": {"$exists": "true"}
+            }
+        },
+        {
+            "$sort": {
+                "cpuMark": -1
+            }
+        },
+        {  # group devices by category
+            "$group": {
+                "_id": "$category",
+                "AvgBenchmark": {"$avg": "$cpuMark"},
+                "BestName": {"$first": "$cpuName"},
+                "BestPerf": {"$first": "$cpuMark"},
+                "BestPrice": {"$first": "$price"},
+                "AvgPrice": {"$avg": "$price"},
+                "Registered": {"$count":{}}
+            }
+        },
+        {
+            "$sort": {
+                "AvgBenchmark": -1
+            }
+        },
+
+    ]
+    results = collection.aggregate(pipeline)
+    if results:
+        for document in results:
+            #if document["_id"] == "Desktop" or document["_id"] == "Server" or document["_id"] == "Laptop":
+            print("\n[", document["_id"], "] Avg. CPU Mark:", round(document["AvgBenchmark"],2),
+                    "; Avg. Price:", round(document["AvgPrice"],2), "USD ; ",
+                    "Number of registered components: ", document["Registered"])
+            print("[", document["_id"], "] Best Performance Component:", document["BestName"],
+                  "(CPU Mark:", str(document["BestPerf"]), "; Price:", str(document["BestPrice"]), "USD)")
+            # pprint.pprint(document)
+
+
+def get_gpu_stats_category(start_year):
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    print("->STATISTICS - GPUs statistics per [CATEGORY] from:", start_year)
+    # CPUs Distribution per category and core count
+    pipeline = [
+        {
+            "$match": {
+                "testDate": {"$gte": start_year}, "G3Dmark": {"$exists": "true"}, "price": {"$exists": "true"}
+            }
+        },
+        {
+            "$sort": {
+                "G3Dmark": -1
+            }
+        },
+        {  # group devices by category
+            "$group": {
+                "_id": "$category",
+                "AvgBenchmark": {"$avg": "$G3Dmark"},
+                "BestName": {"$first": "$gpuName"},
+                "BestPerf": {"$first": "$G3Dmark"},
+                "BestPrice": {"$first": "$price"},
+                "AvgPrice": {"$avg": "$price"},
+                "Registered": {"$count":{}}
+            }
+        },
+        {
+            "$sort": {
+                "AvgBenchmark": -1
+            }
+        },
+
+    ]
+    results = collection.aggregate(pipeline)
+    if results:
+        for document in results:
+            #if document["_id"] == "Desktop" or document["_id"] == "Server" or document["_id"] == "Laptop":
+            print("\n[", document["_id"], "] Avg. G3D Mark:", round(document["AvgBenchmark"],2),
+                  "; Avg. Price:", round(document["AvgPrice"],2), "USD ; ",
+                  "Number of registered components: ", document["Registered"])
+            print("[", document["_id"], "] Best Performance Component:", document["BestName"],
+                  "(G3D Mark:", str(document["BestPerf"]), "; Price:", str(document["BestPrice"]), "USD)")
+            # pprint.pprint(document)
+
+
+def create_cpu_component(cpu_name, cpu_mark, thread_mark, cores, test_date, socket, category):
+    component_uuid = str(uuid.uuid4())
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    document = {
+        "cpuName": cpu_name,
+        "cpuMark": cpu_mark,
+        "threadMark": thread_mark,
+        "cores": cores,
+        "testDate": test_date,
+        "socket": socket,
+        "category": category,
+        "componentID": component_uuid
+    }
+    result = collection.insert_one(document)
+    print(f"->CREATE Document CPU Added, ID: {result.inserted_id}")
+    return component_uuid
+
+
+def update_component(component_uuid, fields):
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    result = collection.update_one(
+        {"componentID": component_uuid},
+        {"$set": fields}
+    )
+    if result.matched_count > 0:
+        print("->UPDATE Component updated successfully")
+    else:
+        print("->UPDATE Component not found")
+
+
+def delete_component(component_uuid):
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    result = collection.delete_one({"componentID": component_uuid})
+    if result.deleted_count > 0:
+        print("->DELETE Component deleted successfully")
+    else:
+        print("->DELETE Component not found")
+
+
 
 class Component:
     def __init__(self, component_type):
         self.client = MongoClient('mongodb://localhost:27017/')
-        self.db = client['local']
-        self.collection = db['components']
+        self.db = self.client['local']
+        self.collection = self.db['components']
         self.mongo_document = None
         self.component_type = component_type
         self.component_id = None
@@ -88,7 +296,7 @@ class Component:
                         '$regex': re_req_gpu, '$options': 'i'
                     }
                 }
-            else: # try intel component
+            else:  # try intel component
                 f_component_str = component_str + "$"
                 cpu_query = {
                     'cpuName': {
@@ -176,7 +384,8 @@ class Component:
             budget_pipeline = [
                 {
                     "$match": {
-                        "category": {'$regex': user_component_category, '$options': 'i'}, "cpuValue": {"$exists": "true"},
+                        "category": {'$regex': user_component_category, '$options': 'i'},
+                        "cpuValue": {"$exists": "true"},
                         "price": {"$lte": user_budget}, "cpuMark": {"$gt": self.cpu.cpu_mark}
                     }
                 },
@@ -192,7 +401,8 @@ class Component:
             high_perf_pipeline = [
                 {
                     "$match": {
-                        "category": {'$regex': user_component_category, '$options': 'i'}, "cpuValue": {"$exists": "true"},
+                        "category": {'$regex': user_component_category, '$options': 'i'},
+                        "cpuValue": {"$exists": "true"},
                         "cpuMark": {"$gt": self.cpu.cpu_mark}
                     }
                 },
@@ -210,8 +420,8 @@ class Component:
                 print("->CPU Suggestion Found!")
                 for document in results:
                     print("$$", document["cpuName"])
-                    increment = (100*(document["cpuMark"]/user_component_benchmark)) - 100
-                    increment = round(increment,1)
+                    increment = (100 * (document["cpuMark"] / user_component_benchmark)) - 100
+                    increment = round(increment, 1)
                     print("     -Performance increment:", str(increment), "%")
                     print("     -cpuMark:", str(document["cpuMark"]))
                     print("     -Price:", str(document["price"]), "USD")
@@ -223,8 +433,8 @@ class Component:
                 print("->High Performance CPU Suggestion Found!!")
                 for document in results:
                     print("$$$$", document["cpuName"])
-                    increment = (100*(document["cpuMark"]/user_component_benchmark)) - 100
-                    increment = round(increment,1)
+                    increment = (100 * (document["cpuMark"] / user_component_benchmark)) - 100
+                    increment = round(increment, 1)
                     print("     -Performance increment:", str(increment), "%")
                     print("     -cpuMark:", str(document["cpuMark"]))
                     print("     -Price:", str(document["price"]), "USD")
@@ -236,7 +446,8 @@ class Component:
             budget_pipeline = [
                 {
                     "$match": {
-                        "category": {'$regex': user_component_category, '$options': 'i'}, "gpuValue": {"$exists": "true"},
+                        "category": {'$regex': user_component_category, '$options': 'i'},
+                        "gpuValue": {"$exists": "true"},
                         "price": {"$lte": user_budget}, "G3Dmark": {"$gt": self.gpu.g3d_mark}
                     }
                 },
@@ -252,7 +463,8 @@ class Component:
             high_perf_pipeline = [
                 {
                     "$match": {
-                        "category": {'$regex': user_component_category, '$options': 'i'}, "gpuValue": {"$exists": "true"},
+                        "category": {'$regex': user_component_category, '$options': 'i'},
+                        "gpuValue": {"$exists": "true"},
                         "G3Dmark": {"$gt": self.gpu.g3d_mark}
                     }
                 },
@@ -270,8 +482,8 @@ class Component:
                 print("->GPU Suggestion Found!")
                 for document in results:
                     print("$$", document["gpuName"])
-                    increment = (100*(document["G3Dmark"]/user_component_benchmark)) - 100
-                    increment = round(increment,1)
+                    increment = (100 * (document["G3Dmark"] / user_component_benchmark)) - 100
+                    increment = round(increment, 1)
                     print("     -Performance increment:", str(increment), "%")
                     print("     -G3Dmark:", str(document["G3Dmark"]))
                     print("     -Price:", str(document["price"]), "USD")
@@ -283,8 +495,8 @@ class Component:
                 print("->High Performance GPU Suggestion Found!!")
                 for document in results:
                     print("$$$$", document["gpuName"])
-                    increment = (100*(document["G3Dmark"]/user_component_benchmark)) - 100
-                    increment = round(increment,1)
+                    increment = (100 * (document["G3Dmark"] / user_component_benchmark)) - 100
+                    increment = round(increment, 1)
                     print("     -Performance increment:", str(increment), "%")
                     print("     -G3Dmark:", str(document["G3Dmark"]))
                     print("     -Price:", str(document["price"]), "USD")
