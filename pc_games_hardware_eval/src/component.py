@@ -2,7 +2,6 @@ import re
 from pymongo import MongoClient
 import pprint
 import uuid
-from bson import ObjectId
 
 
 def format_intel_cpu_string(req_cpu):
@@ -62,7 +61,7 @@ def show_best_cpu_value(limit, category, min_score=0):
                     "cpuValue": -1
                 }
             },
-            {  # group devices by category
+            {
                 "$project": {"cpuName": 1, "cpuValue": 1, "price": 1, "cpuMark": 1, "_id": 0}
             },
             {
@@ -221,7 +220,27 @@ def create_cpu_component(cpu_name, cpu_mark, thread_mark, cores, test_date, sock
         "componentID": component_uuid
     }
     result = collection.insert_one(document)
-    print(f"->CREATE Document CPU Added, ID: {result.inserted_id}")
+    print(f"->CREATE Document CPU Added, mongodbID: {result.inserted_id}")
+    return component_uuid
+
+
+def create_gpu_component(gpu_name, g3d_mark, g2d_mark, price, gpu_value, test_date, category):
+    component_uuid = str(uuid.uuid4())
+    s_client = MongoClient('mongodb://localhost:27017/')
+    s_db = s_client['local']
+    collection = s_db['components']
+    document = {
+        "gpuName": gpu_name,
+        "G3Dmark": g3d_mark,
+        "G2Dmark": g2d_mark,
+        "price": price,
+        "gpuValue": gpu_value,
+        "testDate": test_date,
+        "category": category,
+        "componentID": component_uuid
+    }
+    result = collection.insert_one(document)
+    print(f"->CREATE Document GPU Added, mongodbID: {result.inserted_id}")
     return component_uuid
 
 
@@ -248,7 +267,6 @@ def delete_component(component_uuid):
         print("->DELETE Component deleted successfully")
     else:
         print("->DELETE Component not found")
-
 
 
 class Component:
@@ -365,6 +383,7 @@ class Component:
         if document_count > 0:
             print("->Find UUID returned: ")
             for document in query_ret:
+                self.mongo_document = document
                 if "cpuName" in document:
                     print(document["cpuName"])
                     self.parse_cpu_fields_to_object(document)
@@ -378,7 +397,7 @@ class Component:
     # have superior performance than this component, constrained by the user budget.
     # This should be used when this component is a minimum requirement for a Game
     # The suggestion will also return the amount of performance increment based on the user component
-    def suggest_upgrade(self, user_component_benchmark, user_component_category, user_budget):
+    def suggest_upgrade(self, user_component_benchmark, user_component_category, user_budget=500):
         user_component_category = format_category_str(user_component_category)
         if self.component_type == "cpu":
             budget_pipeline = [
@@ -544,3 +563,55 @@ class Component:
 
     def print_component_info(self):
         pprint.pprint(self.mongo_document)
+
+    def create_cpu_component(self, cpu_name, cpu_mark, thread_mark, cores, test_date, socket, category):
+        component_uuid = str(uuid.uuid4())
+        document = {
+            "cpuName": cpu_name,
+            "cpuMark": cpu_mark,
+            "threadMark": thread_mark,
+            "cores": cores,
+            "testDate": test_date,
+            "socket": socket,
+            "category": category,
+            "componentID": component_uuid
+        }
+        result = self.collection.insert_one(document)
+        print(f"->CREATE Document CPU Added, mongodbID: {result.inserted_id}")
+        self.parse_cpu_fields_to_object(document)
+        self.mongo_document = document
+
+    def create_gpu_component(self, gpu_name, g3d_mark, g2d_mark, price, gpu_value, test_date, category):
+        component_uuid = str(uuid.uuid4())
+        document = {
+            "gpuName": gpu_name,
+            "G3Dmark": g3d_mark,
+            "G2Dmark": g2d_mark,
+            "price": price,
+            "gpuValue": gpu_value,
+            "testDate": test_date,
+            "category": category,
+            "componentID": component_uuid
+        }
+        result = self.collection.insert_one(document)
+        print(f"->CREATE Document GPU Added, mongodbID: {result.inserted_id}")
+        self.parse_gpu_fields_to_object(document)
+        self.mongo_document = document
+
+    def update_component(self, fields):
+        result = self.collection.update_one(
+            {"componentID": self.component_id},
+            {"$set": fields}
+        )
+        if result.matched_count > 0:
+            print("->UPDATE Component updated successfully")
+        else:
+            print("->UPDATE Component not found")
+        self.find_component_by_id(self.component_id)
+
+    def delete_component(self):
+        result = self.collection.delete_one({"componentID": self.component_id})
+        if result.deleted_count > 0:
+            print("->DELETE Component deleted successfully")
+        else:
+            print("->DELETE Component not found")

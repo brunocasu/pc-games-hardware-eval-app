@@ -70,7 +70,6 @@ def fix_system_requirements_cpu_string(req_cpu):
         return req_cpu
 
 
-
 def fix_system_requirements_gpu_string(req_gpu):
     pattern1 = re.compile(r'  or ')
     match1 = pattern1.search(req_gpu)
