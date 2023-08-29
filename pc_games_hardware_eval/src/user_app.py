@@ -35,13 +35,13 @@ def search_game(game_name):
     print("->SEARCH Game Found in database!")
     # REDIS: read session/1111/user/cpu:
     # REDIS: read session/1111/user/gpu:
-    # REDIS: read session/1111/game_searches:
-    # REDIS: write session/1111/game_searches: +1
+    # REDIS: read session/1111/user/game_searches:
+    # REDIS: write session/1111/user/game_searches: +1
 
     #if component_id:
-    # REDIS: write session/1111/user/game_eval/1/title: string
-    # REDIS: write session/1111/user/game_eval/1/cpu: bool
-    # REDIS: write session/1111/user/game_eval/1/gpu: bool
+    # REDIS: write session/1111/game_eval/1/title: string
+    # REDIS: write session/1111/game_eval/1/cpu: bool
+    # REDIS: write session/1111/game_eval/1/gpu: bool
 
 ## OK
 def search_component(game_name):

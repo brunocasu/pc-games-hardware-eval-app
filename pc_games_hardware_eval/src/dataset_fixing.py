@@ -8,8 +8,8 @@ from pymongo import MongoClient
 client = MongoClient('mongodb://localhost:27017/')
 db = client['local']
 
-csv_delimiter = ","  # Specify the delimiter used in your CSV file
-csv_encoding = "utf-8"  # Specify the encoding used in your CSV file
+csv_delimiter = ","  # Specify the delimiter used in the CSV file
+csv_encoding = "utf-8"  # Specify the encoding used in the CSV file
 
 
 def convert_csv_to_json(csv_file_path, json_file_path):

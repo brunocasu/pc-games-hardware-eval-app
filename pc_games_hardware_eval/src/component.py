@@ -5,6 +5,12 @@ import uuid
 
 
 def format_intel_cpu_string(req_cpu):
+    """
+    Takes an input search string and detects if the Intel CPU naming convention is found
+    Return a modified string that improves the queries when searching CPU by name
+    :param req_cpu:
+    :return: str_fixed
+    """
     result = re.search(r'Intel Core [^\s]+', req_cpu)
     if result:
         str_fixed = result.group(0) + " "
@@ -30,6 +36,12 @@ def format_intel_cpu_string(req_cpu):
 
 
 def format_category_str(req_category):
+    """
+    Takes a search string and detects if a "," is present
+    To improve the query for a category name, the function returns only the string before the "," char.
+    :param req_category:
+    :return: parsed_string
+    """
     pattern1 = re.compile(r',')
     match1 = pattern1.search(req_category)
     if match1:
@@ -40,13 +52,21 @@ def format_category_str(req_category):
         return req_category
 
 
-def show_best_cpu_value(limit, category, min_score=0):
+def show_best_cpu_value(category, limit=5, min_score=0):
+    """
+    Prints the CPUs ordered by Highest CPU Value metric for the specified category.
+    Limits the query for a maximum of 100 documents.
+    :param category:
+    :param limit:
+    :param min_score:
+    :return:
+    """
     print("->SHOW Best CPUs (Value Metric), category:", category)
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
     if limit > 100:
-        print("Limit set is to HIGH")
+        print("->ERROR: Limit set is to HIGH")
     else:
         pipeline = [
             {
@@ -69,13 +89,13 @@ def show_best_cpu_value(limit, category, min_score=0):
             },
 
         ]
-    results = collection.aggregate(pipeline)
-    for document in results:
-        print(document["cpuName"], "- Value:", document["cpuValue"],
-              "CPU Mark:", document["cpuMark"], "Price:", document["price"], "USD")
+        results = collection.aggregate(pipeline)
+        for document in results:
+            print(document["cpuName"], "- Value:", document["cpuValue"],
+                  "CPU Mark:", document["cpuMark"], "Price:", document["price"], "USD")
 
 
-def show_best_gpu_value(limit, category, min_score=0):
+def show_best_gpu_value(category, limit=5, min_score=0):
     print("->SHOW Best GPUs (Value Metric), category:", category)
     s_client = MongoClient('mongodb://localhost:27017/')
     s_db = s_client['local']
@@ -96,7 +116,7 @@ def show_best_gpu_value(limit, category, min_score=0):
                     "gpuValue": -1
                 }
             },
-            {  # group devices by category
+            {
                 "$project": {"gpuName": 1, "gpuValue": 1, "price": 1, "G3Dmark": 1, "_id": 0}
             },
             {
@@ -104,10 +124,10 @@ def show_best_gpu_value(limit, category, min_score=0):
             },
 
         ]
-    results = collection.aggregate(pipeline)
-    for document in results:
-        print(document["gpuName"], "- Value:", document["gpuValue"],
-              "G3D Mark:", document["G3Dmark"], "Price:", document["price"], "USD")
+        results = collection.aggregate(pipeline)
+        for document in results:
+            print(document["gpuName"], "- Value:", document["gpuValue"],
+                  "G3D Mark:", document["G3Dmark"], "Price:", document["price"], "USD")
 
 
 def get_cpu_stats_category(start_year):
@@ -135,7 +155,7 @@ def get_cpu_stats_category(start_year):
                 "BestPerf": {"$first": "$cpuMark"},
                 "BestPrice": {"$first": "$price"},
                 "AvgPrice": {"$avg": "$price"},
-                "Registered": {"$count":{}}
+                "Registered": {"$count": {}}
             }
         },
         {
@@ -148,10 +168,10 @@ def get_cpu_stats_category(start_year):
     results = collection.aggregate(pipeline)
     if results:
         for document in results:
-            #if document["_id"] == "Desktop" or document["_id"] == "Server" or document["_id"] == "Laptop":
-            print("\n[", document["_id"], "] Avg. CPU Mark:", round(document["AvgBenchmark"],2),
-                    "; Avg. Price:", round(document["AvgPrice"],2), "USD ; ",
-                    "Number of registered components: ", document["Registered"])
+            # if document["_id"] == "Desktop" or document["_id"] == "Server" or document["_id"] == "Laptop":
+            print("\n[", document["_id"], "] Avg. CPU Mark:", round(document["AvgBenchmark"], 2),
+                  "; Avg. Price:", round(document["AvgPrice"], 2), "USD ; ",
+                  "Number of registered components: ", document["Registered"])
             print("[", document["_id"], "] Best Performance Component:", document["BestName"],
                   "(CPU Mark:", str(document["BestPerf"]), "; Price:", str(document["BestPrice"]), "USD)")
             # pprint.pprint(document)
@@ -182,7 +202,7 @@ def get_gpu_stats_category(start_year):
                 "BestPerf": {"$first": "$G3Dmark"},
                 "BestPrice": {"$first": "$price"},
                 "AvgPrice": {"$avg": "$price"},
-                "Registered": {"$count":{}}
+                "Registered": {"$count": {}}
             }
         },
         {
@@ -195,9 +215,9 @@ def get_gpu_stats_category(start_year):
     results = collection.aggregate(pipeline)
     if results:
         for document in results:
-            #if document["_id"] == "Desktop" or document["_id"] == "Server" or document["_id"] == "Laptop":
-            print("\n[", document["_id"], "] Avg. G3D Mark:", round(document["AvgBenchmark"],2),
-                  "; Avg. Price:", round(document["AvgPrice"],2), "USD ; ",
+            # if document["_id"] == "Desktop" or document["_id"] == "Server" or document["_id"] == "Laptop":
+            print("\n[", document["_id"], "] Avg. G3D Mark:", round(document["AvgBenchmark"], 2),
+                  "; Avg. Price:", round(document["AvgPrice"], 2), "USD ; ",
                   "Number of registered components: ", document["Registered"])
             print("[", document["_id"], "] Best Performance Component:", document["BestName"],
                   "(G3D Mark:", str(document["BestPerf"]), "; Price:", str(document["BestPrice"]), "USD)")

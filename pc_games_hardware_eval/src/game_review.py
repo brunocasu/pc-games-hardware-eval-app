@@ -11,7 +11,6 @@ def show_most_reviewed_games(limit=5):
     s_client = MongoClient('mongodb://localhost:27017/')
     s_db = s_client['local']
     collection = s_db['game_reviews']
-    # CPUs Distribution per category and core count
     pipeline = [
         {
             "$project": {"new_review": 0}
@@ -107,38 +106,6 @@ def show_latest_reviews(title, limit=5):
         for document in results:
             pprint.pprint(document)
             print()
-
-
-def create_new_review(hour_played, is_early_access_review, recommendation, title, new_review):
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
-    collection = s_db['game_reviews']
-    date_posted_iso = datetime.utcnow().replace(microsecond=0)
-    word_count = len(new_review.split())
-    document = {
-        "date_posted": date_posted_iso,
-        "hour_played": hour_played,
-        "is_early_access_review": is_early_access_review,
-        "recommendation": recommendation,
-        "title": title,
-        "word_count": word_count,
-        "new_review": new_review
-    }
-    result = collection.insert_one(document)
-    print(f"->NEW review added, mongodbID: {result.inserted_id}")
-    mongodbID = result.inserted_id
-    return str(mongodbID)
-
-
-def delete_review(document_id):
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
-    collection = s_db['game_reviews']
-    result = collection.delete_one({"_id": ObjectId(document_id)})
-    if result.deleted_count > 0:
-        print("->DELETED review")
-    else:
-        print("Review not found")
 
 
 class GameReview:

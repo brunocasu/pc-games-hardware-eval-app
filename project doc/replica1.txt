@@ -1,0 +1,260 @@
+Setting Local Replica Set: Config & Deployment
+https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set-for-testing/
+
+# ------------------------------- WINDOWS -------------------------------
+
+- 1. CREATE THE NECESSARY DATA DIRECTORIES FOR EACH REPLICA SET MEMBER:
+
+	mkdir  c:\MongoDB\data\r1
+	mkdir  c:\MongoDB\data\r2
+	mkdir  c:\MongoDB\data\r3
+
+- 2. START YOUR MONGOD INSTANCES IN THEIR OWN SHELL WINDOWS BY ISSUING THE FOLLOWING COMMANDS:
+
+	This starts each instance as a member of a replica set named rs0,
+	each running on a distinct port, and specifies the path to your data directory
+	with the --dbpath setting.
+	If you are already using the suggested ports, select different ports.
+
+	The --oplogSize setting reduces the disk space that each mongod instance uses.
+	This is ideal for testing and development deployments as it prevents overloading your machine.
+
+	NB: start each mongod instance in a dedicated shell (PowerShell)
+
+		#FIRST MEMBER (PRIMARY)
+		mongod --replSet rs0 --port 27017 --bind_ip localhost --dbpath c:\MongoDB\data\r1  --oplogSize 200
+
+		#SECOND MEMBER (SECONDARY)
+		mongod --replSet rs0 --port 27018 --bind_ip localhost --dbpath c:\MongoDB\data\r2  --oplogSize 200
+
+		#THIRD MEMBER (SECONDARY)
+		mongod --replSet rs0 --port 27019 --bind_ip localhost --dbpath c:\MongoDB\data\r3  --oplogSize 200
+
+- 3. CONNECT TO ONE OF YOUR mongod INSTANCES THROUGH mongosh:
+
+	You will need to indicate which instance by specifying its port number:
+
+		mongosh --port 27017
+
+	Create a replica set configuration object in mongosh environment, as in the following example:
+	(Copy and Paste the following within mongo shell)
+
+		rsconf = {
+		  _id: "rs0",
+		  members: [
+			{
+			 _id: 0,
+			 host: "localhost:27017"
+			},
+			{
+			 _id: 1,
+			 host: "localhost:27018"
+			},
+			{
+			 _id: 2,
+			 host: "localhost:27019"
+			}
+		   ]
+		}
+
+	Initiate the replica set passing the config file just created as argument:
+
+		rs.initiate( rsconf )
+
+	Display the current replica configuration by issuing the following command:
+
+		rs.conf()
+
+	The replica set configuration object should resemble the following:
+
+		{
+		   "_id" : "rs0",
+		   "version" : 1,
+		   "protocolVersion" : NumberLong(1),
+		   "members" : [
+			  {
+				 "_id" : 0,
+				 "host" : "localhost:27017",
+				 "arbiterOnly" : false,
+				 "buildIndexes" : true,
+				 "hidden" : false,
+				 "priority" : 1,
+				 "tags" : {
+
+				 },
+				 "secondaryDelaySecs" : NumberLong(0),
+				 "votes" : 1
+			  },
+			  {
+				 "_id" : 1,
+				 "host" : "localhost:27018",
+				 "arbiterOnly" : false,
+				 "buildIndexes" : true,
+				 "hidden" : false,
+				 "priority" : 1,
+				 "tags" : {
+
+				 },
+				 "secondaryDelaySecs" : NumberLong(0),
+				 "votes" : 1
+			  },
+			  {
+				 "_id" : 2,
+				 "host" : "localhost:27019",
+				 "arbiterOnly" : false,
+				 "buildIndexes" : true,
+				 "hidden" : false,
+				 "priority" : 1,
+				 "tags" : {
+
+				 },
+				 "secondaryDelaySecs" : NumberLong(0),
+				 "votes" : 1
+			  }
+		   ],
+		   "settings" : {
+			  "chainingAllowed" : true,
+			  "heartbeatIntervalMillis" : 2000,
+			  "heartbeatTimeoutSecs" : 10,
+			  "electionTimeoutMillis" : 10000,
+			  "catchUpTimeoutMillis" : -1,
+			  "getLastErrorModes" : {
+
+			  },
+			  "getLastErrorDefaults" : {
+				 "w" : 1,
+				 "wtimeout" : 0
+			  },
+			  "replicaSetId" : ObjectId("598f630adc9053c6ee6d5f38")
+		   }
+		}
+
+	Check the STATUS of your replica set at any time with the rs.status() operation:
+
+		rs.status()
+
+	You should get an output like the following:
+
+		{
+		  set: 'rs0',
+		  date: ISODate("2022-11-26T16:37:21.930Z"),
+		  myState: 1,
+		  term: Long("1"),
+		  syncSourceHost: '',
+		  syncSourceId: -1,
+		  heartbeatIntervalMillis: Long("2000"),
+		  majorityVoteCount: 2,
+		  writeMajorityCount: 2,
+		  votingMembersCount: 3,
+		  writableVotingMembersCount: 3,
+		  optimes: {
+			lastCommittedOpTime: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			lastCommittedWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			readConcernMajorityOpTime: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			appliedOpTime: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			durableOpTime: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			lastAppliedWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			lastDurableWallTime: ISODate("2022-11-26T16:37:11.094Z")
+		  },
+		  lastStableRecoveryTimestamp: Timestamp({ t: 1669480618, i: 1 }),
+		  electionCandidateMetrics: {
+			lastElectionReason: 'electionTimeout',
+			lastElectionDate: ISODate("2022-11-26T16:37:09.655Z"),
+			electionTerm: Long("1"),
+			lastCommittedOpTimeAtElection: { ts: Timestamp({ t: 1669480618, i: 1 }), t: Long("-1") },
+			lastSeenOpTimeAtElection: { ts: Timestamp({ t: 1669480618, i: 1 }), t: Long("-1") },
+			numVotesNeeded: 2,
+			priorityAtElection: 1,
+			electionTimeoutMillis: Long("10000"),
+			numCatchUpOps: Long("0"),
+			newTermStartDate: ISODate("2022-11-26T16:37:09.706Z"),
+			wMajorityWriteAvailabilityDate: ISODate("2022-11-26T16:37:11.035Z")
+		  },
+		  members: [
+			{
+			  _id: 0,
+			  name: 'localhost:27017',
+			  health: 1,
+			  state: 1,
+			  stateStr: 'PRIMARY',
+			  uptime: 96,
+			  optime: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			  optimeDate: ISODate("2022-11-26T16:37:11.000Z"),
+			  lastAppliedWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			  lastDurableWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			  syncSourceHost: '',
+			  syncSourceId: -1,
+			  infoMessage: '',
+			  electionTime: Timestamp({ t: 1669480629, i: 1 }),
+			  electionDate: ISODate("2022-11-26T16:37:09.000Z"),
+			  configVersion: 1,
+			  configTerm: 1,
+			  self: true,
+			  lastHeartbeatMessage: ''
+			},
+			{
+			  _id: 1,
+			  name: 'localhost:27018',
+			  health: 1,
+			  state: 2,
+			  stateStr: 'SECONDARY',
+			  uptime: 23,
+			  optime: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			  optimeDurable: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			  optimeDate: ISODate("2022-11-26T16:37:11.000Z"),
+			  optimeDurableDate: ISODate("2022-11-26T16:37:11.000Z"),
+			  lastAppliedWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			  lastDurableWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			  lastHeartbeat: ISODate("2022-11-26T16:37:21.692Z"),
+			  lastHeartbeatRecv: ISODate("2022-11-26T16:37:21.197Z"),
+			  pingMs: Long("0"),
+			  lastHeartbeatMessage: '',
+			  syncSourceHost: 'localhost:27017',
+			  syncSourceId: 0,
+			  infoMessage: '',
+			  configVersion: 1,
+			  configTerm: 1
+			},
+			{
+			  _id: 2,
+			  name: 'localhost:27019',
+			  health: 1,
+			  state: 2,
+			  stateStr: 'SECONDARY',
+			  uptime: 23,
+			  optime: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			  optimeDurable: { ts: Timestamp({ t: 1669480631, i: 7 }), t: Long("1") },
+			  optimeDate: ISODate("2022-11-26T16:37:11.000Z"),
+			  optimeDurableDate: ISODate("2022-11-26T16:37:11.000Z"),
+			  lastAppliedWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			  lastDurableWallTime: ISODate("2022-11-26T16:37:11.094Z"),
+			  lastHeartbeat: ISODate("2022-11-26T16:37:21.691Z"),
+			  lastHeartbeatRecv: ISODate("2022-11-26T16:37:21.198Z"),
+			  pingMs: Long("0"),
+			  lastHeartbeatMessage: '',
+			  syncSourceHost: 'localhost:27017',
+			  syncSourceId: 0,
+			  infoMessage: '',
+			  configVersion: 1,
+			  configTerm: 1
+			}
+		  ],
+		  ok: 1,
+		  '$clusterTime': {
+			clusterTime: Timestamp({ t: 1669480631, i: 7 }),
+			signature: {
+			  hash: Binary(Buffer.from("0000000000000000000000000000000000000000", "hex"), 0),
+			  keyId: Long("0")
+			}
+		  },
+		  operationTime: Timestamp({ t: 1669480631, i: 7 })
+		}
+
+
+# ------------------------------- UBUNTU -------------------------------
+
+	1. Install MongoDB Server by following steps detailed here:
+		https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu/
+
+
+	2. Follow the same steps illustrated on top for Windows
