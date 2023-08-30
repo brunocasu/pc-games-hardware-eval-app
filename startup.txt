@@ -1,4 +1,6 @@
 .\mongod.exe --replSet rs0 --dbpath C:\Users\bruno\Desktop\replica2 --port 27019 --bind_ip localhost --oplogSize 200
+.\mongod.exe --replSet rs0 --dbpath C:\Users\bruno\Desktop\replica1 --port 27018 --bind_ip localhost --oplogSize 200
+.\mongod.exe --replSet rs0 --dbpath C:\Users\bruno\Desktop\replica0 --port 27017 --bind_ip localhost --oplogSize 200
 
 rsconf = {_id: “rs0", members: [ {_id: 0, host: "localhost:27017", priority:1}, {_id: 1, host: "localhost:27018", priority:3}, {_id: 2, host: "localhost:27019", priority:5}]};
 

@@ -8,8 +8,8 @@ MIN_REVIEWS = 500
 
 def show_most_reviewed_games(limit=5):
     print("->SHOW Top", limit, "Most Reviewed Games")
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['game_reviews']
     pipeline = [
         {
@@ -39,8 +39,8 @@ def show_most_reviewed_games(limit=5):
 
 def show_best_reviewed_games(limit=5):
     print("->SHOW Top", limit, "Best Rated Games")
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['game_reviews']
     pipeline = [
         {
@@ -85,8 +85,8 @@ def show_best_reviewed_games(limit=5):
 
 def show_latest_reviews(title, limit=5):
     print("->SHOW Latest Reviews of: ", title)
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['game_reviews']
     pipeline = [
         {
@@ -110,8 +110,8 @@ def show_latest_reviews(title, limit=5):
 
 class GameReview:
     def __init__(self):
-        self.client = MongoClient('mongodb://localhost:27017/')
-        self.db = self.client['local']
+        self.client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+        self.db = self.client['project']
         self.collection = self.db['game_reviews']
         self.mongo_document = None
         self.title = None

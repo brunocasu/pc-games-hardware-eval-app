@@ -61,12 +61,12 @@ def show_best_cpu_value(category, limit=5, min_score=0):
     :param min_score:
     :return:
     """
-    print("->SHOW Best CPUs (Value Metric), category:", category)
+    print("\n->SHOW Best CPUs (Value Metric), category:", category)
     s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
     s_db = s_client['project']
     collection = s_db['components']
     if limit > 100:
-        print("->ERROR: Limit set is to HIGH")
+        print("\n->ERROR: Limit set is to HIGH")
     else:
         pipeline = [
             {
@@ -96,9 +96,9 @@ def show_best_cpu_value(category, limit=5, min_score=0):
 
 
 def show_best_gpu_value(category, limit=5, min_score=0):
-    print("->SHOW Best GPUs (Value Metric), category:", category)
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    print("\n->SHOW Best GPUs (Value Metric), category:", category)
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
     if limit > 100:
         print("Limit set is to HIGH")
@@ -131,10 +131,10 @@ def show_best_gpu_value(category, limit=5, min_score=0):
 
 
 def get_cpu_stats_category(start_year):
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
-    print("->STATISTICS - CPUs statistics per [CATEGORY] from:", start_year)
+    print("\n->STATISTICS - CPUs statistics per [CATEGORY] from:", start_year)
     # CPUs Distribution per category and core count
     pipeline = [
         {
@@ -178,10 +178,10 @@ def get_cpu_stats_category(start_year):
 
 
 def get_gpu_stats_category(start_year):
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
-    print("->STATISTICS - GPUs statistics per [CATEGORY] from:", start_year)
+    print("\n->STATISTICS - GPUs statistics per [CATEGORY] from:", start_year)
     # CPUs Distribution per category and core count
     pipeline = [
         {
@@ -226,8 +226,8 @@ def get_gpu_stats_category(start_year):
 
 def create_cpu_component(cpu_name, cpu_mark, thread_mark, cores, test_date, socket, category):
     component_uuid = str(uuid.uuid4())
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
     document = {
         "cpuName": cpu_name,
@@ -240,14 +240,14 @@ def create_cpu_component(cpu_name, cpu_mark, thread_mark, cores, test_date, sock
         "componentID": component_uuid
     }
     result = collection.insert_one(document)
-    print(f"->CREATE Document CPU Added, mongodbID: {result.inserted_id}")
+    print(f"\n->CREATE Document CPU Added, mongodbID: {result.inserted_id}")
     return component_uuid
 
 
 def create_gpu_component(gpu_name, g3d_mark, g2d_mark, price, gpu_value, test_date, category):
     component_uuid = str(uuid.uuid4())
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
     document = {
         "gpuName": gpu_name,
@@ -260,39 +260,39 @@ def create_gpu_component(gpu_name, g3d_mark, g2d_mark, price, gpu_value, test_da
         "componentID": component_uuid
     }
     result = collection.insert_one(document)
-    print(f"->CREATE Document GPU Added, mongodbID: {result.inserted_id}")
+    print(f"\n->CREATE Document GPU Added, mongodbID: {result.inserted_id}")
     return component_uuid
 
 
 def update_component(component_uuid, fields):
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
     result = collection.update_one(
         {"componentID": component_uuid},
         {"$set": fields}
     )
     if result.matched_count > 0:
-        print("->UPDATE Component updated successfully")
+        print("\n->UPDATE Component updated successfully")
     else:
-        print("->UPDATE Component not found")
+        print("\n->UPDATE Component not found")
 
 
 def delete_component(component_uuid):
-    s_client = MongoClient('mongodb://localhost:27017/')
-    s_db = s_client['local']
+    s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+    s_db = s_client['project']
     collection = s_db['components']
     result = collection.delete_one({"componentID": component_uuid})
     if result.deleted_count > 0:
-        print("->DELETE Component deleted successfully")
+        print("\n->DELETE Component deleted successfully")
     else:
-        print("->DELETE Component not found")
+        print("\n->DELETE Component not found")
 
 
 class Component:
     def __init__(self, component_type):
-        self.client = MongoClient('mongodb://localhost:27017/')
-        self.db = self.client['local']
+        self.client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
+        self.db = self.client['project']
         self.collection = self.db['components']
         self.mongo_document = None
         self.component_type = component_type
@@ -344,7 +344,7 @@ class Component:
             query_ret = self.collection.find(cpu_query)
             document_count = self.collection.count_documents(cpu_query)
             if document_count > 1:
-                print("->NOT FOUND! Find CPU returned multiple components: ")
+                print("\n->NOT FOUND! Find CPU returned multiple components: ")
                 for document in query_ret:
                     print(document["cpuName"])
             elif document_count == 0:
@@ -357,19 +357,19 @@ class Component:
                 query_ret = self.collection.find(cpu_query)
                 document_count = self.collection.count_documents(cpu_query)
                 if document_count > 1:
-                    print("->NOT FOUND! Find CPU returned multiple components: ")
+                    print("\n->NOT FOUND! Find CPU returned multiple components: ")
                     for document in query_ret:
                         print(document["cpuName"])
                 elif document_count == 0:
-                    print("->NOT FOUND! Find CPU returned zero documents: Component not found/not in database")
+                    print("\n->NOT FOUND! Find CPU returned zero documents: Component not found/not in database")
                 else:
-                    print("->Find CPU returned: ", document_count)
+                    print("\n->Find CPU returned: ", document_count)
                     for document in query_ret:
                         print(document["cpuName"])
                         self.mongo_document = document
                         self.parse_cpu_fields_to_object(document)
             else:
-                print("->Find CPU returned: ", document_count)
+                print("\n->Find CPU returned: ", document_count)
                 for document in query_ret:
                     print(document["cpuName"])
                     self.mongo_document = document
@@ -386,9 +386,9 @@ class Component:
             query_ret = self.collection.find(gpu_query)
             document_count = self.collection.count_documents(gpu_query)
             if document_count == 0:
-                print("->Find GPU returned zero documents: Component not found/not in database")
+                print("\n->Find GPU returned zero documents: Component not found/not in database")
             else:
-                print("->Find GPU returned: ", document_count)
+                print("\n->Find GPU returned: ", document_count)
                 for document in query_ret:
                     self.mongo_document = document
                     self.parse_gpu_fields_to_object(document)
@@ -401,7 +401,7 @@ class Component:
         query_ret = self.collection.find(uuid_query)
         document_count = self.collection.count_documents(uuid_query)
         if document_count > 0:
-            print("->Find UUID returned: ")
+            print("\n->Find UUID returned: ")
             for document in query_ret:
                 self.mongo_document = document
                 if "cpuName" in document:
@@ -411,7 +411,7 @@ class Component:
                     self.parse_gpu_fields_to_object(document)
                     print(document["gpuName"])
         else:
-            print("->Find UUID returned zero documents")
+            print("\n->Find UUID returned zero documents")
 
     # The suggest_upgrade function will provide a search in the available components that
     # have superior performance than this component, constrained by the user budget.
@@ -456,7 +456,7 @@ class Component:
             ]
             results = self.collection.aggregate(budget_pipeline)
             if results:
-                print("->CPU Suggestion Found!")
+                print("\n->CPU Suggestion Found!")
                 for document in results:
                     print("$$", document["cpuName"])
                     increment = (100 * (document["cpuMark"] / user_component_benchmark)) - 100
@@ -466,10 +466,10 @@ class Component:
                     print("     -Price:", str(document["price"]), "USD")
                     print("     -Category:", str(document["category"]))
             else:
-                print("->Budget CPU Suggestion Pipeline return zero documents")
+                print("\n->Budget CPU Suggestion Pipeline return zero documents")
             results = self.collection.aggregate(high_perf_pipeline)
             if results:
-                print("->High Performance CPU Suggestion Found!!")
+                print("\n->High Performance CPU Suggestion Found!!")
                 for document in results:
                     print("$$$$", document["cpuName"])
                     increment = (100 * (document["cpuMark"] / user_component_benchmark)) - 100
@@ -479,7 +479,7 @@ class Component:
                     print("     -Price:", str(document["price"]), "USD")
                     print("     -Category:", str(document["category"]))
             else:
-                print("->High Perf. Suggestion Pipeline return zero documents")
+                print("\n->High Perf. Suggestion Pipeline return zero documents")
 
         elif self.component_type == "gpu":
             budget_pipeline = [
@@ -518,7 +518,7 @@ class Component:
             ]
             results = self.collection.aggregate(budget_pipeline)
             if results:
-                print("->GPU Suggestion Found!")
+                print("\n->GPU Suggestion Found!")
                 for document in results:
                     print("$$", document["gpuName"])
                     increment = (100 * (document["G3Dmark"] / user_component_benchmark)) - 100
@@ -528,10 +528,10 @@ class Component:
                     print("     -Price:", str(document["price"]), "USD")
                     print("     -Category:", str(document["category"]))
             else:
-                print("->Budget CPU Suggestion Pipeline return zero documents")
+                print("\n->Budget CPU Suggestion Pipeline return zero documents")
             results = self.collection.aggregate(high_perf_pipeline)
             if results:
-                print("->High Performance GPU Suggestion Found!!")
+                print("\n->High Performance GPU Suggestion Found!!")
                 for document in results:
                     print("$$$$", document["gpuName"])
                     increment = (100 * (document["G3Dmark"] / user_component_benchmark)) - 100
@@ -541,7 +541,7 @@ class Component:
                     print("     -Price:", str(document["price"]), "USD")
                     print("     -Category:", str(document["category"]))
             else:
-                print("->High Perf. Suggestion Pipeline return zero documents")
+                print("\n->High Perf. Suggestion Pipeline return zero documents")
 
     def parse_cpu_fields_to_object(self, document):
         self.component_id = document["componentID"]
@@ -597,7 +597,7 @@ class Component:
             "componentID": component_uuid
         }
         result = self.collection.insert_one(document)
-        print(f"->CREATE Document CPU Added, mongodbID: {result.inserted_id}")
+        print(f"\n->CREATE Document CPU Added, mongodbID: {result.inserted_id}")
         self.parse_cpu_fields_to_object(document)
         self.mongo_document = document
 
@@ -614,7 +614,7 @@ class Component:
             "componentID": component_uuid
         }
         result = self.collection.insert_one(document)
-        print(f"->CREATE Document GPU Added, mongodbID: {result.inserted_id}")
+        print(f"\n->CREATE Document GPU Added, mongodbID: {result.inserted_id}")
         self.parse_gpu_fields_to_object(document)
         self.mongo_document = document
 
@@ -624,14 +624,14 @@ class Component:
             {"$set": fields}
         )
         if result.matched_count > 0:
-            print("->UPDATE Component updated successfully")
+            print("\n->UPDATE Component updated successfully")
         else:
-            print("->UPDATE Component not found")
+            print("\n->UPDATE Component not found")
         self.find_component_by_id(self.component_id)
 
     def delete_component(self):
         result = self.collection.delete_one({"componentID": self.component_id})
         if result.deleted_count > 0:
-            print("->DELETE Component deleted successfully")
+            print("\n->DELETE Component deleted successfully")
         else:
-            print("->DELETE Component not found")
+            print("\n->DELETE Component not found")
