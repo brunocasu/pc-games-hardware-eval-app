@@ -224,14 +224,17 @@ def get_gpu_stats_category(start_year):
             # pprint.pprint(document)
 
 
-def create_cpu_component(cpu_name, cpu_mark, thread_mark, cores, test_date, socket, category):
+def create_cpu_component(cpu_name, cpu_mark, thread_mark, price, cores, test_date, socket, category):
     component_uuid = str(uuid.uuid4())
     s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
     s_db = s_client['project']
     collection = s_db['components']
+    value = cpu_mark/price
     document = {
         "cpuName": cpu_name,
+        "price": price,
         "cpuMark": cpu_mark,
+        "cpuValue": value,
         "threadMark": thread_mark,
         "cores": cores,
         "testDate": test_date,
@@ -241,14 +244,16 @@ def create_cpu_component(cpu_name, cpu_mark, thread_mark, cores, test_date, sock
     }
     result = collection.insert_one(document)
     print(f"\n->CREATE Document CPU Added, mongodbID: {result.inserted_id}")
+    print("->COMPONENT ID:", component_uuid)
     return component_uuid
 
 
-def create_gpu_component(gpu_name, g3d_mark, g2d_mark, price, gpu_value, test_date, category):
+def create_gpu_component(gpu_name, g3d_mark, g2d_mark, price, test_date, category):
     component_uuid = str(uuid.uuid4())
     s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
     s_db = s_client['project']
     collection = s_db['components']
+    gpu_value = g3d_mark/price
     document = {
         "gpuName": gpu_name,
         "G3Dmark": g3d_mark,
@@ -261,6 +266,7 @@ def create_gpu_component(gpu_name, g3d_mark, g2d_mark, price, gpu_value, test_da
     }
     result = collection.insert_one(document)
     print(f"\n->CREATE Document GPU Added, mongodbID: {result.inserted_id}")
+    print("->COMPONENT ID:", component_uuid)
     return component_uuid
 
 
@@ -584,11 +590,14 @@ class Component:
     def print_component_info(self):
         pprint.pprint(self.mongo_document)
 
-    def create_cpu_component(self, cpu_name, cpu_mark, thread_mark, cores, test_date, socket, category):
+    def create_cpu_component(self, cpu_name, cpu_mark, thread_mark, price, cores, test_date, socket, category):
         component_uuid = str(uuid.uuid4())
+        value = cpu_mark/price
         document = {
             "cpuName": cpu_name,
+            "price": price,
             "cpuMark": cpu_mark,
+            "cpuValue": value,
             "threadMark": thread_mark,
             "cores": cores,
             "testDate": test_date,
@@ -603,6 +612,7 @@ class Component:
 
     def create_gpu_component(self, gpu_name, g3d_mark, g2d_mark, price, gpu_value, test_date, category):
         component_uuid = str(uuid.uuid4())
+        gpu_value = g3d_mark/price
         document = {
             "gpuName": gpu_name,
             "G3Dmark": g3d_mark,

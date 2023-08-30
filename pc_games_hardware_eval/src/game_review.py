@@ -7,7 +7,7 @@ MIN_REVIEWS = 500
 
 
 def show_most_reviewed_games(limit=5):
-    print("->SHOW Top", limit, "Most Reviewed Games")
+    print("\n->SHOW Top", limit, "Most Reviewed Games")
     s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
     s_db = s_client['project']
     collection = s_db['game_reviews']
@@ -38,7 +38,7 @@ def show_most_reviewed_games(limit=5):
 
 
 def show_best_reviewed_games(limit=5):
-    print("->SHOW Top", limit, "Best Rated Games")
+    print("\n->SHOW Top", limit, "Best Rated Games")
     s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
     s_db = s_client['project']
     collection = s_db['game_reviews']
@@ -84,7 +84,7 @@ def show_best_reviewed_games(limit=5):
 
 
 def show_latest_reviews(title, limit=5):
-    print("->SHOW Latest Reviews of: ", title)
+    print("\n->SHOW Latest Reviews of: ", title)
     s_client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
     s_db = s_client['project']
     collection = s_db['game_reviews']

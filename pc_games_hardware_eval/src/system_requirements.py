@@ -4,6 +4,7 @@ import pprint
 import uuid
 
 
+
 class GameRequirements:
     def __init__(self, title):
         self.client = MongoClient('mongodb://localhost:27019/?replicaSet=rs0')
@@ -20,10 +21,13 @@ class GameRequirements:
         self.reviews = None
 
     def find_game_requirements(self):
+        #query = {
+        #    'title': {
+        #        '$regex': self.title, '$options': 'i'
+        #    }
+        #}
         query = {
-            'title': {
-                '$regex': self.title, '$options': 'i'
-            }
+            'title': self.title
         }
         query_ret = self.collection.find(query)
         document_count = self.collection.count_documents(query)
@@ -41,7 +45,3 @@ class GameRequirements:
                 self.gpu_id = document["GPU_id"]
                 self.os_name = document["OS"]
                 self.file_size = document["File Size"]
-
-
-#gg = GameRequirements("Valorant")
-#gg.find_game_requirements()

@@ -68,6 +68,7 @@ class Evaluation:
         self.search_number = search_number
 
     def get_system_evaluation(self):
+        print("\n->NEW EVALUATION Request")
         redis_client = redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db)
         # create components objects
         user_cpu = Component("cpu")
@@ -89,18 +90,18 @@ class Evaluation:
         cpu_result = "true"
         gpu_result = "true"
         if game_cpu.cpu.cpu_mark > user_cpu.cpu.cpu_mark:
-            print("->EVALUATION: User CPU does NOT meet the Game Requirements!")
+            print("\n->EVALUATION: User CPU does NOT meet the Game Requirements!")
             game_cpu.suggest_upgrade(user_cpu.cpu.cpu_mark, user_cpu.category, user_budget_value)
             cpu_result = "false"
         else:
-            print("->EVALUATION: User CPU is OK for the Game Requirements!")
+            print("\n->EVALUATION: User CPU is OK for the Game Requirements!")
 
         if game_gpu.gpu.g3d_mark > user_gpu.gpu.g3d_mark:
-            print("->EVALUATION: User GPU does NOT meet the Game Requirements!")
+            print("\n->EVALUATION: User GPU does NOT meet the Game Requirements!")
             game_gpu.suggest_upgrade(user_gpu.gpu.g3d_mark, user_gpu.category, user_budget_value)
             gpu_result = "false"
         else:
-            print("->EVALUATION: User GPU is OK for the Game Requirements!")
+            print("\n->EVALUATION: User GPU is OK for the Game Requirements!")
 
         key = "session:" + str(self.session_id) + ":evaluation:" + str(self.search_number) + ":" + "title"
         redis_client.set(key, self.title)
@@ -108,26 +109,3 @@ class Evaluation:
         redis_client.set(key, cpu_result)
         key = "session:" + str(self.session_id) + ":evaluation:" + str(self.search_number) + ":" + "gpu_result"
         redis_client.set(key, gpu_result)
-
-
-usr = UserSession()
-usr.create_session_kv()
-usr.submit_system_kv("Core i5-9400F", "Geforce gtx 1050 Ti", 500)
-
-usr.n_searches = usr.n_searches + 1
-game_title = "Hogwarts Legacy"
-eval = Evaluation(usr.session_id, usr.n_searches, game_title)
-eval.get_system_evaluation()
-
-#time.sleep(100)
-#game_title = "Cyberpunk 2077"
-#usr.n_searches = usr.n_searches + 1
-#eval2 = Evaluation(usr.session_id, usr.n_searches, game_title)
-#time.sleep(100)
-#usr2 = UserSession()
-#usr2.create_session_kv()
-#usr2.submit_system_kv("Core i3-3225", "GeForce GTX 460", 400)
-#time.sleep(100)
-#game_title = "Cyberpunk 2077"
-#usr2.n_searches = usr.n_searches + 1
-#eval3 = Evaluation(usr.session_id, usr.n_searches, game_title)
