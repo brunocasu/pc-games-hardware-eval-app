@@ -182,7 +182,6 @@ def get_gpu_stats_category(start_year):
     s_db = s_client['project']
     collection = s_db['components']
     print("\n->STATISTICS - GPUs statistics per [CATEGORY] from:", start_year)
-    # CPUs Distribution per category and core count
     pipeline = [
         {
             "$match": {
