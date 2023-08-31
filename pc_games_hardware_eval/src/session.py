@@ -3,7 +3,7 @@ import redis
 import random
 from component import Component
 from system_requirements import GameRequirements
-import time
+
 
 # info_type refers the key name ("user_cpu", "user_gpu" or "user_budget")
 def get_user_info_kv(session_id, info_type):

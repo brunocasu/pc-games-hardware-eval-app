@@ -1,5 +1,6 @@
 from hardware_eval_app import search_component, show_best_value_components, submit_my_system, evaluate_my_system
 
+# Demo 1 shows the use of the functions when a User wants to search components and evaluate its system for a Game
 # PC Components (Evaluation Functions)
 
 # Users: 5.	View a selected Component benchmarks and price.

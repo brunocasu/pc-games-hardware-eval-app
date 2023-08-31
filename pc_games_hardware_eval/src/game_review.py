@@ -3,6 +3,8 @@ from datetime import datetime
 from bson import ObjectId
 import pprint
 
+# parameter to configure the minimum amount of reviews a game have to be added to the Best reviewed games list
+# Games with to few reviews are not as popular, and may not be included in the list
 MIN_REVIEWS = 500
 
 
@@ -31,7 +33,6 @@ def show_most_reviewed_games(limit=5):
         },
     ]
     results = collection.aggregate(pipeline)
-    num_documents = 0
     if results:
         for document in results:
             print(document["_id"], "- Number of Reviews:",document["Registered"])

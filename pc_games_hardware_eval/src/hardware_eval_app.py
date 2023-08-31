@@ -1,15 +1,11 @@
 from component import Component
 from session import UserSession, Evaluation
-from component import get_gpu_stats_category, \
-    get_cpu_stats_category, show_best_cpu_value, show_best_gpu_value
+from component import show_best_cpu_value, show_best_gpu_value
 from game_review import GameReview
-from game_review import show_most_reviewed_games, show_best_reviewed_games, show_latest_reviews
-import uuid
-from bson import Binary, UuidRepresentation
+from system_requirements import update_embedded_reviews
 from system_requirements import GameRequirements
 
 
-# PC Components (Evaluation Functions)
 # Users: 5.	View a selected Component benchmarks and price.
 def search_component(component_type, model):
     search_component = Component(component_type)
@@ -56,7 +52,8 @@ def write_my_review(hours_played, is_early_access, recommend, game_title, review
 
 def submit_my_review(review_obj):
     review_obj.publish_review()
+    update_embedded_reviews(review_obj.title)
 
-# Managers: 1.	Create/update/delete a PC game information. TODO
+
 
 
